@@ -1,0 +1,52 @@
+1. Create Dir in Server {script_dir} in server and Unzip menu.x.y.z.zip
+2. Add below Configurations in .bash_profile
+#Menu Browser
+menu_path={script_dir}
+alias menu=${script.dir}/menu.sh
+alias menuvi="vi ${script.dir}/menu.sh"
+alias menuconfig="vi ${script.dir}/menu.conf"
+save and quit vim
+reload bash_profile by . .bash_profile
+3. chmod +x  ${script.dir}/menu.sh
+   chmod +x ${script.dir}/libs/*
+4. dos2unix ${script.dir}/*
+   dos2unix ${script.dir}/libs/*
+5. Type menuconfig
+In opened windown Add below details 
+<Menu Configurations>
+[MENU]
+#Script Log Level-:<Disable:0>|<Alert:1>|<Critical:2>|<Error:3>|<Warning:4>|<Notice:5>|<Informatinal:6>|<Debug:7>|[Default:Disable]
+#Script Log Rotation-:<Monthly:0>|<Daily:1>|<Hourly:2>|[Default:Monthly]
+#Script Logs Path-:<logspath>|[Default:{script_dir}/logs]
+#Prefix Value-:<PrefixValue>|[Default:Menu]
+#Server Name-:<Identical Name>|[Default:hostname]
+#Auto Clear Script Logs-:<Enable:1>|<Disable:0>|[Default:Disable]
+#Clear Frequency Limit Days-:<No of Days>|[Default:10]
+[GLOBAL]
+#Script Status-:<Enable:1>|<Disable:0>|[Default:Disable]
+#server name-:Server Identifier, Default Hostname 
+#menu_user-:User Identifier|[Default:${USER}]
+[TASK]
+no_of_task-:<No of Task Configured>|[Default:0]
+script${i}-:<Name of Script>|<ScriptPath/ScriptName>
+[MODEL]
+name-:<Name of Application/Task Need to be display in Menu, Please give unique Section Name and App Name>
+appID-:<Unique ps -Aef value of Application>
+start_script-:<Script for starting the application>
+stop_script-:<Script for stoping the application>
+restart_script-:<Script for restarting the application>
+reload_script-:<Script for reload the application>
+log_dir-:<Logs path configured for application>
+log_prefix-:<Logs Prefix for Finding Latest Log>
+[SAMPLE]
+name=
+appID=
+start_script=
+stop_script=
+restart_script=
+reload_script=
+log_dir=
+log_prefix=
+[TASK]
+no_of_task=0
+script1=SampleTask|script.sh

@@ -1,0 +1,138 @@
+#!/bin/bash
+function print_menu()
+{
+	local idint="${1}"
+	local prefixVal="${2}"
+	local otherDetails="${3}"
+	local prefixVallen=${#prefixVal}
+	local finwidth=$(( 30 - prefixVallen ))
+	if [ ${idint} -eq 0 ]
+		then
+			printf "%s" "${prefixVal}" ; printf "%0.s " $(seq 1 ${finwidth}) ; echo -e "${otherDetails}"
+		else
+			printf "%2d. %s" "${idint}" "${prefixVal}" ; printf "%0.s " $(seq 1 ${finwidth}) ; printf "${otherDetails}\n"
+	fi
+}
+
+function pause()
+{
+	local message="$@"
+	[ -z $message ] && message="${green}Press [Enter] key to continue...${default}"
+	printf "$message"
+	read  readEnterKey
+}
+
+
+function footer_mesg()
+{
+	local critid=${1}
+	local msgftr=${2}
+	if [ ${critid} -eq 0 ]
+		then 
+			footerMsg="${green} ${msgftr} ${default}"
+	elif [ ${critid} -eq 1 ]
+		then 
+			footerMsg="${yellow} ${msgftr} ${default}"
+	elif [ ${critid} -eq 2 ]
+		then
+			footerMsg="${red} ${msgftr} ${default}"
+		else
+			footerMsg="${red} Something went wrong ${default}"
+	fi  		
+}
+
+
+function progress_bar()
+{
+	local sleepVar=${1}
+	local bar="##################################################"
+	local barlength=${#bar}
+	for i in `seq 1 100`;
+	do
+    	n=$(($i*barlength/100))
+    	printf "\r[%-${barlength}s (%d%%)]" "${bar:0:n}" "${i}" 
+		sleep ${sleepVar}
+	done
+	echo -e "\n"
+}
+
+
+
+function write_header()
+{
+	local headerMsg="$@"
+	if [[  ${headerMsg} == 0 ]]
+		then 
+			echo $(clear)
+			echo -e "############################################################"
+			echo -e "#            Operations and Maintenance Menu               #"
+			echo -e "#         Copyright (c) 2018 by 6D Technologies            #"
+			echo -e "############################################################"
+		else
+			COLUMNS=$(tput cols)
+			echo -e "------------------------------------------------------------"
+			printf "%*s\n" $(((${#headerMsg}+$COLUMNS)/4)) "${indigo} ${headerMsg} ${default}"
+			echo -e "------------------------------------------------------------"
+			echo
+	fi
+}
+
+
+
+function aboutSys()
+{
+	write_header 0
+	write_header "About Server"
+	local osName="$(cat /etc/redhat-release)"
+	local usrValnam="$(whoami)"
+	local bitVersion="$(getconf LONG_BIT)"
+	local ipAddress=$(/sbin/ifconfig| grep "inet" | grep -v "127.0.0.1" | awk '{print $2}'| sed -e 's/addr://g' | grep -v "::1"| awk -v RS= '{gsub(/\n/, ", ")}1')
+	if [ ${serverType} -eq 1 ]
+		then 
+			local totMemSys=$(free -m | grep -w Mem:|awk '{print $2}')
+			local usedMemNw=$(free -m | grep -w "buffers/cache:"| awk '{print $3}')
+			local balMemNw=$(free -m | grep -w "buffers/cache:"| awk '{print $4}')
+			local memUsageNw=$(echo "scale=0; ${usedMemNw}*100/${totMemSys}" | bc)
+		else
+			local totMemSys=$(free -m | awk 'NR==2{printf $2 }')
+			local usedMemNw=$(free -m |  awk 'NR==2{printf $3 }')
+			local balMemNw=$(free -m |  awk 'NR==2{printf $4 }')
+			local memUsageNw=$(free -m | awk 'NR==2{printf $3*100/$2 }')
+	fi 
+	local nofCrSystm=$(getconf _NPROCESSORS_ONLN)
+	print_menu "0" "Red Hat Release" ": ${osName},${bitVersion}"
+	print_menu "0" "Login user" ": ${usrValnam}"
+	print_menu "0" "Host Name" ": $(hostname)"
+	print_menu "0" "CPU Details" ": ${nofCrSystm} Cores,Arch $(uname -m)"
+	print_menu "0" "Uptime"	":$(uptime | awk -F ',' '{ print $1}')"
+	print_menu "0" "Ram Usage" ": ${memUsageNw}%, Free:${balMemNw}m"
+	print_menu "0" "Open files"	": $(lsof 2>/dev/null |wc -l)"
+	local cpuInfo=$(vmstat -n 1 5 | awk '{print $(NF-4)"|"$(NF-3)"|"$(NF-2)"|"$(NF-1)}'  | tail -1 )
+	local cpuSys=$( echo ${cpuInfo} | cut -d"|" -f1)
+	local cpuIdle=$( echo ${cpuInfo} | cut -d"|" -f2)
+	local cpuWa=$( echo ${cpuInfo} | cut -d"|" -f3)
+	local cpuSt=$( echo ${cpuInfo} | cut -d"|" -f4)
+	local loadavgNw=$(top -b -n1|grep 'load average'|awk -F ':' '{print $(NF)}')
+	local loadavgsecnd=$(top -b -n1|grep 'load average'|awk -F ':' '{print $(NF)}' | awk -F ',' '{ print $2}' | awk -F '.' '{ print $1}'| sed 's/ //g')
+	loadavgsecnd=$(( loadavgsecnd / nofCrSystm ))
+	print_menu "0" "CPU Usage" ": sy:${cpuSys}%, Idle:${cpuIdle}%, wa:${cpuWa}%, st:${cpuSt}%"
+	print_menu "0" "Load Average" ":${loadavgNw}, ${loadavgsecnd}/Core"
+	print_menu "0" "IP Address Configured"	": ${ipAddress}"
+	echo -e
+	pause
+}
+
+function aboutMenu()
+{
+	write_header 0
+	write_header "About Menu"
+	print_menu "0" "Menu Build version" ": ${scriptVersion}"
+    print_menu "0" "Written By" ": Arun Binoy"
+    print_menu "0" "Under Guidance" ": Adarsh RS"
+    print_menu "0" "Base Release" ": 01/03/2018"
+    print_menu "0" "Last Modified On" ": ${scriptModifyDate}"
+	print_menu "0" "Last Modified By" ": ${scriptModifiedby}"
+	echo -e "------------------------------------------------------------"
+	echo -e "Copyright (C) 2019\n" #</code.ab>\n
+	pause
+}

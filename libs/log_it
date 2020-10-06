@@ -1,0 +1,45 @@
+#!/bin/bash
+if [ ${multipleInstance} -eq 1  ] 2>/dev/null;
+	then
+		logSuffix="${moduleID}${instanceId}."
+	else
+		logSuffix=""
+fi
+#Log File naming based rotation
+if [ ${logRotation} -eq 0  ] 2>/dev/null;
+	then
+		loggerFileName="${logDir}/${logPrefix}.${logSuffix}${serverName}.$(date +%y.%b).log"
+elif [ ${logRotation} -eq 1  ] 2>/dev/null;
+	then 
+		loggerFileName="${logDir}/${logPrefix}.${logSuffix}${serverName}.$(date +%y.%b.%d).log"
+	else
+		loggerFileName="${logDir}/${logPrefix}.${logSuffix}${serverName}.$(date +%y.%b.%d.%H).log"
+fi 
+#Run in debug mode, if set
+if [ "${logLevel}" == "7" ]
+	then
+		set -x
+fi
+# Normal Logger Function
+function log_it()
+{
+ local logsInfo="${1}"
+ local logsWrite="${2}"
+
+ if [ ${logsInfo} -gt 0 ] && [ ${logsInfo} -le 3 ]
+        then
+                cid=1
+ elif [ ${logsInfo} -eq 4 ]
+        then
+                cid=3
+ elif [ ${logsInfo} -eq 5 ]
+        then
+                cid=2
+        else
+                cid=10
+ fi
+ if [ ${logsInfo} -le ${logLevel} ]
+        then
+                echo "[$(date +"%Y-%m-%d %H:%M:%S,%3N %Z")] [${USER}] [$(basename ${BASH_SOURCE[1]})] [${sessionId}] $(tput setaf ${cid}) ${logsWrite} ${default}" >> "${loggerFileName}"
+ fi
+}

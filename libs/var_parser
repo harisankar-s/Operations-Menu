@@ -1,0 +1,13 @@
+#!/bin/bash
+function var_parser()
+{
+  section="${1}"
+  found=false
+  while read line
+  do
+    [[ $found == false && "$line" != "[$section]" ]] &&  continue
+    [[ $found == true && "${line:0:1}" = '[' ]] && break
+    found=true
+    echo "${line}"
+  done < ${configFile}
+}

@@ -1,0 +1,16 @@
+#!/bin/bash
+function auto_clear
+{
+local acfileLocSrc=${1}
+local acPrefixVal=${2}
+local acExtnVal=${3}
+local acRmvFildays=${4}
+local clearLogCnt=$(find ${acfileLocSrc} -maxdepth 1 -size +0c -type f -name "${acPrefixVal}*${acExtnVal}" -mtime +"${acRmvFildays}"| wc -l)
+log_it "6" "[I] [${LINENO}] Auto Clearing Script logs :find ${acfileLocSrc} -maxdepth 1 -size +0c -type f -name "${acPrefixVal}*${acExtnVal}" -mtime +${acRmvFildays}, Count:${clearLogCnt}"
+if [ ${clearLogCnt} -gt 0 ]
+	then 
+		local acfilesNameRmv=$(find ${acfileLocSrc} -maxdepth 1 -size +0c -type f -name "${acPrefixVal}*${acExtnVal}" -mtime +"${acRmvFildays}" -printf '%s')
+		log_it "6" "[I] [${LINENO}] Files need to clear, ${acfilesNameRmv}"
+		find ${acfileLocSrc} -maxdepth 1 -size +0c -type f -name "${acPrefixVal}*${acExtnVal}" -mtime +"${acRmvFildays}" -exec rm -vf {} +		
+fi 
+}

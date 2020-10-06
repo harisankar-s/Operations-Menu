@@ -1,0 +1,13 @@
+#!/bin/bash
+#Color related
+default=$(tput sgr0)
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+indigo=$(tput setaf 6)
+scriptBuild=$(cksum ${scriptDir}/${scriptName}| awk '{print $1}')
+sessionId="$(printf '0x%x' $(date +%s))"
+firstRun=${tmppath}/firstRun${scriptBuild}
+scriptid="MENU"
+moduleID="12"
+configFile=${scriptDir}/menu.conf

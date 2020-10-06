@@ -1,0 +1,128 @@
+#!/bin/bash
+
+function process_status()
+{
+	local secApp=${1}
+	local ismain_menu=${2}
+	local appUniqps=$(var_parser ${secApp} | sed -n 's/^appID=//p')
+	[ -z ${appUniqps} ] && appUniqps="101010"
+	local countRuning=$(ps -Aef | grep -w ${menuUser}| grep -v grep | grep -w -c ${appUniqps})
+	if [ ${countRuning} -gt 0 ]
+		then
+			pidVal=$(ps -Aef | grep -w ${menuUser}|  grep -w ${appUniqps} | grep -iwv 'gdb ' | grep -iwv 'tail  '| grep -iwv 'vi ' | grep -iwv 'vim ' | grep -iv '.log$'  | grep -iv '.out' | awk '{ print $2}')
+			log_it "6" "[I] [${LINENO}] Name:${appName}, AppID:${appUniqps}, appStatus:${appStatus}, PID:${pidVal}."
+			if [[ ${countRuning} == 1 ]]
+				then
+					if [ ${ismain_menu} =  0  ]
+						then 
+							memUsage=$(ps -p ${pidVal} -o %mem= )
+							cpuUsage=$(ps -p ${pidVal} -o %cpu= )
+							uptimePid=$(ps -p ${pidVal} -o lstart= )
+							dirrunning=$(lsof  -p ${pidVal} 2>/dev/null | grep cwd | grep DIR  | awk '{ print $NF}' )
+							openFilesApp=$(lsof  -p ${pidVal} 2>/dev/null |wc -l)
+							appStatus=1
+							msgStatus="${green}Running PID:${pidVal}${default}"
+						else
+							msgStatus="${green}Running PID:${pidVal}${default}"
+							log_it "6" "[I] [${LINENO}] ${appUniqps} Running with PID ${pidVal}"
+					fi 
+				else
+					log_it "3" "[E] [${LINENO}] Multiple instances are running, ${countRuning},PID:${pidVal}"
+					msgStatus="${red}Multiple Instance running${default}"
+					appStatus=2
+			fi
+		else
+			if [[ ${appUniqps} == 101010 ]]
+				then 
+					appStatus=3
+					msgStatus="${red}Invalid Details Configured${default}"
+					log_it "3" "[E] [${LINENO}] Invalid Details configured in ${configFile}"
+				else
+					appStatus=0
+					log_it "3" "[E] [${LINENO}] ${secApp}:${appUniqps} is not running, ${countRuning}"
+					msgStatus="${yellow}Not Running${default}"
+			fi	
+	fi	
+}
+
+
+function app_kill()
+{
+	local secApp=${1}
+	local appName=${2}
+	local pidVal=${3}
+	log_it "6" "[I] [${LINENO}] Double Confirmation input received to kill ${secApp}:${appName}, PID:${pidVal}"
+	echo -e "${yellow} Killing Application ${appName},with PID:${pidVal} ${default}"
+	echo -e "$(ps -Aef | grep ${pidVal} | grep -v grep)"
+	sleep 5
+	echo "kill -9 ${pidVal}"
+	kill -9 ${pidVal}
+	if (($? > 0))
+		then 
+			footer_mesg "2" "Error occured to execute Kill Signal"
+			log_it "3" "[E] [${LINENO}] Error Occcured while kill ${secApp}:${appName}, PID:${pidVal}"
+		else
+			footer_mesg "0"  "${appName}-PID:${pidVal} Killed"
+			log_it "4" "[W] [${LINENO}]  killed ${secApp}:${appName}, PID:${pidVal}"
+			progress_bar "0.01"
+	fi 
+}
+
+#Script Execute
+function script_execute()
+{
+	local taskname=${1}
+	local scrptFl=${2}
+	local feature=${3}
+	local isArgpass=${4}
+	local argScript=${5}
+	if [ -f ${scrptFl} ] && [ -s ${scrptFl} ] 
+		then
+			log_it "6" "[I] [${LINENO}] For ${feature} Configured this script :${scrptFl}, executing script."
+			echo "${feature} ${taskname} sh ${scrptFl}"
+			if [ ${isArgpass} -eq 1 ]
+				then 
+					sh ${scrptFl} "${argScript}"
+				else
+					sh ${scrptFl}
+			fi 
+			progress_bar "0.05"
+			pause
+			footer_mesg "0" "Executed Script: ${scrptFl}"
+		else
+			log_it "3" "[E] [${LINENO}] ${feature} script  :${scrptFl} is Missing/ Invalid"
+			footer_mesg "1" "Error while execute Script: ${scrptFl}"
+	fi
+}
+
+
+function log_details()
+{
+	local secApp=${1}
+	local appName=${2}
+	local logpath=${3}
+	local logsmode=${4}
+	local logFilename=$(var_parser ${secApp} | sed -n 's/^log_prefix=//p')
+	local logfilec=$(find "${logpath}" -maxdepth 1 -type f -iname "${logFilename}*" 2>/dev/null | wc -l)
+	if [ ${logfilec} -gt 0 ]
+		then
+			logfile=$(find "${logpath}" -maxdepth 1 -type f -iname "${logFilename}*"| sort -r | tail -1)
+			log_it "6" "[I] [${LINENO}] Double Confirmation input received ,Logs :${logpath}, File:${logfile},Mode:${logsmode}"
+			if [ ${logsmode} -eq 2 ]
+				then 
+					echo -e "tail -f ${logfile}"
+					sleep 2
+					tail -f ${logfile}
+					pause
+				else
+					echo -e "more ${logfile}"
+					sleep 2
+					more ${logfile}
+					pause
+			fi
+		else
+			log_it "4" "[W] [${LINENO}] Double Confirmation input Received, But Logs are not present , Values- Logs :${logpath} File Count :${logfilec}."
+			footer_mesg "1" "Log File not found:${logpath}/${logfile}"
+			sub_menu ${secApp}
+	fi
+}
